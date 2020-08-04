@@ -1,0 +1,15 @@
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Shop extends Model
+{
+    protected $table = 'shops';
+
+    public function order()
+    {
+        return $this->hasMany(Order::class);
+    }
+}
