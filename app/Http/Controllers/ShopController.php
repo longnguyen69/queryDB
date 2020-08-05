@@ -3,17 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Order;
+use App\Shop;
 use http\Env\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ShopController extends Controller
 {
+    protected $shop;
+    protected $order;
+
+    public function __construct(Shop $shop, Order $order)
+    {
+        $this->shop = $shop;
+        $this->order = $order;
+    }
+
     //get all shop in database
     public function index()
     {
         try {
-            $shops = DB::table('shops')->get();
+            $shops = $this->shop->getAll();
             return response()->json([
                 'code' => 200,
                 'status' => 'OK',
@@ -31,7 +41,7 @@ class ShopController extends Controller
     public function getShop($id)
     {
         try {
-            $shop = DB::table('shops')->find($id);
+            $shop = $this->shop->findShop($id);
             return \response()->json([
                 'code' => 200,
                 'status' => 'OK',
@@ -49,7 +59,7 @@ class ShopController extends Controller
     public function getColumn($column)
     {
         try {
-            $columnShop = DB::table('shops')->pluck($column);
+            $columnShop = $this->shop->getColumn($column);
             return \response()->json([
                 'code' => 200,
                 'data' => $columnShop
@@ -63,13 +73,13 @@ class ShopController extends Controller
     }
 
     // get count order in shop
-    public function count($id)
+    public function getOrder($id)
     {
         try {
-            $count = DB::table('order')->where('shop_id');
+            $count = $this->order->getOrder($id);
             return \response()->json([
                 'code' => 200,
-                'data' => count($count)
+                'data' => $count
             ]);
         } catch (\Exception $exception) {
             return \response()->json([
@@ -78,4 +88,5 @@ class ShopController extends Controller
             ]);
         }
     }
+
 }

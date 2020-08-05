@@ -2,20 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateRequest;
+use App\Http\Requests\UpdateRequest;
 use App\Order;
+use App\OrderProduct;
 use App\OrderShiping;
+use App\Shop;
 use App\Voucher;
 use Carbon\Carbon;
+use http\Env\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    protected $order;
+    protected $voucher;
+    protected $shop;
+    protected $orderShiping;
+    protected $orderProducut;
+
+    public function __construct(Order $order, Voucher $voucher, Shop $shop, OrderShiping $orderShiping, OrderProduct $orderProduct)
+    {
+        $this->order = $order;
+        $this->voucher = $voucher;
+        $this->shop = $shop;
+        $this->orderShiping = $orderShiping;
+        $this->orderProducut = $orderProduct;
+    }
+
     //get all order in database
     public function index()
     {
         try {
-            $orders = DB::table('orders')->get();
+            $orders = $this->order->getAll();
             return response()->json([
                 'code' => 200,
                 'data' => $orders
@@ -32,13 +52,13 @@ class OrderController extends Controller
     public function getOrder($id)
     {
         try {
-            $order = DB::table('orders')->find($id);
-            $voucher = DB::table('vouchers')->find($order->voucher_id);
-            $shop = DB::table('shops')->find($order->shop_id);
+            $order = $this->order->findOrder($id);
+            $voucher = $this->voucher->getOrderVoucher($order->id);
+            $shop = $this->shop->findShop($id);
             return response()->json([
                 'code' => 200,
-                'voucher' => $voucher,
-                'shop' => $shop,
+                'voucher' => $voucher->coupon,
+                'shop' => $shop->name,
                 'data' => $order
             ]);
         } catch (\Exception $exception) {
@@ -50,36 +70,15 @@ class OrderController extends Controller
     }
 
     // add order
-    public function store($request)
+    public function store(CreateRequest $request)
     {
         try {
             DB::beginTransaction();
-            $order = new Order();
-            $order->type = $request->type;
-            $order->fiin_user_code = $request->find_user_code;
-            $order->context = $request->context;
-            $order->note = $request->note;
-            $order->transport_fee = $request->transport_fee;
-            $order->discount = $request->discount;
-            $order->status = $request->status;
-            $order->final_price = $request->final_price;
-            $order->reason = $request->reason;
-            $order->cancel_by = $request->cacenl_by;
-            $order->price = $request->price;
-            $order->voucher_id = $request->voucher;
-            $order->shop_id = $request->shop;
-            $order->save();
-            $voucher = DB::table('voucher')->find($request->voucher);
+            $this->order->create($request->type, $request->find_user_code, $request->context, $request->note, $request->transport_fee, $request->discount, $request->status, $request->final_price, $request->reason, $request->cancel_by, $request->price, $request->voucher, $request->shop);
+            $voucher = $this->voucher->getOrderVoucher($request->voucher);
             if ($voucher->quantity > 0) {
-                $voucher->decrement('quantity', 1);
-                $orderShip = new OrderShiping();
-                $orderShip->shiping_id = $request->shiping;
-                $orderShip->code = $request->code;
-                $orderShip->from = $request->from;
-                $orderShip->to = $request->to;
-                $orderShip->shipment_date = Carbon::now();
-                $orderShip->expect_delivery_date = Carbon::now()->addDays(3);
-                $orderShip->save();
+                $this->voucher->decrementVoucher($voucher);
+                $this->orderShiping->createOrderShipping($request->shiping, $request->code, $request->from, $request->to, $request->id);
                 DB::commit();
                 return response()->json([
                     'code' => 200,
@@ -95,5 +94,42 @@ class OrderController extends Controller
                 'status' => $exception->getMessage()
             ]);
         }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            DB::beginTransaction();
+            $order = $this->order->findOrder($id);
+            $orderShipings = $this->orderShiping->findOrderShiping($id);
+            $orderProducts = $this->orderProducut->findOrder($id);
+            foreach ($orderShipings as $orderShiping) {
+                $this->orderShiping->deleteOrderShiping($orderShiping);
+            }
+            foreach ($orderProducts as $orderProduct) {
+                $this->orderProducut->deleteOrderProduct($orderProduct);
+            }
+            $this->order->deleteOrder($order);
+            DB::commit();
+            return \response()->json([
+                'code' => 200,
+                'status' => "Deleted successfully!"
+            ]);
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            return response()->json([
+                'code' => $exception->getCode(),
+                'status' => $exception->getMessage()
+            ]);
+        }
+    }
+
+    public function update($id, UpdateRequest $request)
+    {
+        $this->order->update($id, $request->type, $request->find_user_code, $request->context, $request->note, $request->transport_fee, $request->discount, $request->status, $request->final_price, $request->reason, $request->cancel_by, $request->price, $request->voucher, $request->shop);
+        return \response()->json([
+            'code' => 200,
+            'status' => 'updated successfully!'
+        ]);
     }
 }

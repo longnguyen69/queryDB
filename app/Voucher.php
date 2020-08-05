@@ -12,4 +12,14 @@ class Voucher extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function getOrderVoucher($id)
+    {
+        return Voucher::find($id);
+    }
+
+    public function decrementVoucher($voucher)
+    {
+        $voucher->decrement('quantity', 1);
+    }
 }

@@ -12,4 +12,24 @@ class Shop extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function getAll()
+    {
+        return Shop::all();
+    }
+
+    public function findShop($id)
+    {
+        return Shop::find($id);
+    }
+
+    public function createShop($shop)
+    {
+        $shop->save();
+    }
+
+    public function getColumn($column)
+    {
+        return Shop::all()->pluck($column);
+    }
 }
