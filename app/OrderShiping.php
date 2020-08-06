@@ -9,21 +9,36 @@ class OrderShiping extends Model
 {
     protected $table = 'order_shipings';
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function shiping()
     {
         return $this->belongsTo(Shiping::class);
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
     public function order()
     {
         return $this->hasOne(Order::class);
     }
 
+    /**
+     * @param $id
+     * @return mixed
+     */
     public function findOrderShiping($id)
     {
         return OrderShiping::where('orders_id', $id)->get();
     }
 
+    /**
+     * @param OrderShiping $orderShiping
+     * @return bool|null
+     * @throws \Exception
+     */
     public function deleteOrderShiping(OrderShiping $orderShiping)
     {
         return $orderShiping->delete();

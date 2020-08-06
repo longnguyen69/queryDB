@@ -32,6 +32,10 @@ class OrderController extends Controller
     }
 
     //get all order in database
+
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function index()
     {
         try {
@@ -48,12 +52,34 @@ class OrderController extends Controller
         }
     }
 
+
+    /**
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    // viết view hiển thị danh sahcs order với các filter shop, voucher, order product
+    public function getDetailOrder($id)
+    {
+        $products = $this->orderProducut->getProduct($id);
+        $numberProduct = count($products);
+        $order = $this->order->findOrder($id);
+        $sumOrder = $this->orderProducut->sumOrder($id);
+        return view('filter/order/order-detail',compact('products','numberProduct', 'order', 'sumOrder'));
+    }
+
+
+
     // get oder
+
+    /**
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getOrder($id)
     {
         try {
             $order = $this->order->findOrder($id);
-            $voucher = $this->voucher->getOrderVoucher($order->id);
+            $voucher = $this->voucher->findVoucher($order->voucher_id);
             $shop = $this->shop->findShop($id);
             return response()->json([
                 'code' => 200,
@@ -70,6 +96,11 @@ class OrderController extends Controller
     }
 
     // add order
+
+    /**
+     * @param CreateRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(CreateRequest $request)
     {
         try {

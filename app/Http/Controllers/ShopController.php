@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Order;
+use App\OrderProduct;
 use App\Shop;
 use http\Env\Response;
 use Illuminate\Http\Request;
@@ -12,23 +13,25 @@ class ShopController extends Controller
 {
     protected $shop;
     protected $order;
+    protected $orderProduct;
 
-    public function __construct(Shop $shop, Order $order)
+    public function __construct(Shop $shop, Order $order, OrderProduct $orderProduct)
     {
         $this->shop = $shop;
         $this->order = $order;
+        $this->orderProduct = $orderProduct;
     }
 
     //get all shop in database
+
+    /**
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View
+     */
     public function index()
     {
         try {
             $shops = $this->shop->getAll();
-            return response()->json([
-                'code' => 200,
-                'status' => 'OK',
-                'shops' => $shops
-            ]);
+            return view('filter/shop', compact('shops'));
         } catch (\Exception $exception) {
             return \response()->json([
                 'code' => $exception->getCode(),
@@ -38,15 +41,18 @@ class ShopController extends Controller
     }
 
     //get one shop in database
+
+    /**
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View
+     */
     public function getShop($id)
     {
         try {
             $shop = $this->shop->findShop($id);
-            return \response()->json([
-                'code' => 200,
-                'status' => 'OK',
-                'shop' => $shop
-            ]);
+            $orders = $this->order->getOrderShop($id);
+            $countOrder = count($orders);
+            return view('filter/shop-order', compact('shop','orders', 'countOrder'));
         } catch (\Exception $exception) {
             return \response()->json([
                 'code' => $exception->getCode(),
@@ -56,6 +62,11 @@ class ShopController extends Controller
     }
 
     // get column table shop in database
+
+    /**
+     * @param $column
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getColumn($column)
     {
         try {
@@ -73,6 +84,11 @@ class ShopController extends Controller
     }
 
     // get count order in shop
+
+    /**
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getOrder($id)
     {
         try {

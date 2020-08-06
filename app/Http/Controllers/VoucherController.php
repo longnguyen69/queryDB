@@ -9,17 +9,26 @@ use Illuminate\Support\Facades\DB;
 
 class VoucherController extends Controller
 {
+    protected $voucher;
+    protected $order;
+
+    public function __construct(Voucher $voucher, Order $order)
+    {
+        $this->voucher = $voucher;
+        $this->order = $order;
+    }
 
     //get all voucher
+
+    /**
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View
+     */
     public function index()
     {
         try {
-            $vouchers = Voucher::all();
-            return response()->json([
-                'code' => 200,
-                'data' => $vouchers
-            ]);
-        } catch (\Exception $exception){
+            $vouchers = $this->voucher->getAll();
+            return view('filter/voucher/voucher', compact('vouchers'));
+        } catch (\Exception $exception) {
             return response()->json([
                 'code' => $exception->getCode(),
                 'status' => $exception->getMessage()
@@ -27,20 +36,16 @@ class VoucherController extends Controller
         }
     }
 
-    // get order using voucher
-    public function voucher($voucher_id)
+    /**
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function getOrderVoucher($id)
     {
-        try {
-            $vouchers = Voucher::where('voucher_id',$voucher_id)->get();
-            return response()->json([
-                'code' => 200,
-                'data' => $vouchers
-            ]);
-        } catch (\Exception $exception){
-            return response()->json([
-                'code' => $exception->getCode(),
-                'status' => $exception->getMessage()
-            ]);
-        }
+        $voucher = $this->voucher->findVoucher($id);
+        $orders = $this->order->getOrderVoucher($voucher->id);
+        $number = count($orders);
+
+        return view('filter/voucher/voucher-order', compact('voucher', 'orders', 'number'));
     }
 }
