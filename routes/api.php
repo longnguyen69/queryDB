@@ -18,7 +18,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('get-shops', 'ShopController@index');
+//Route::get('get-shops', 'ShopController@index');
 Route::get('get-shop/{id}', 'ShopController@getShop');
 Route::get('count-shops/{id}', 'ShopController@getOrder');
 Route::get('name-shops/{shop}', 'ShopController@getColumn');

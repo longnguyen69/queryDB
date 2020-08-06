@@ -16,3 +16,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+Route::get('/shop', 'ShopController@index')->name('shop.index');
+Route::get('shop/{id}', 'ShopController@getShop')->name('shop.name');
+
+Route::get('order/{id}', 'OrderController@getDetailOrder')->name('order.detail');
+
+Route::get('voucher', 'VoucherController@index')->name('voucher.index');
+Route::get('voucher/{id}', 'VoucherController@getOrderVoucher')->name('voucher.order');
